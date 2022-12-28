@@ -5,16 +5,17 @@ CFLAGS+=-Wall -Werror
 CXXFLAGS=$(CFLAGS) -std=c++11
 
 CPPFLAGS+=-I.
+CPPFLAGS+=-I./lib
 
 CSRC=
 
 CCSRC=\
 	main.cc\
-	memory.cc\
-	devices.cc\
-	saferead.cc\
-	rv32.cc\
-	dev/memcard.cc
+	lib/memory.cc\
+	lib/devices.cc\
+	lib/saferead.cc\
+	lib/rv32.cc\
+	lib/dev/memcard.cc
 
 COBJ=$(CSRC:.c=.o)
 CCOBJ=$(CCSRC:.cc=.o)

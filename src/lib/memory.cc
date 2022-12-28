@@ -32,8 +32,9 @@
 #include "saferead.h"
 #include "devices.h"
 #include "memory.h"
-#include "main.h"
 
+extern FILE	*ddtout;
+extern Devices *dev;
 memory *mem;
 
 /**

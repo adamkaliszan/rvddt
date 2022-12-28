@@ -26,6 +26,8 @@
 
 #include <stdint.h>
 #include <stdint.h>
+#include <vector>
+
 #include "memory.h"
 
 enum class insntype { R, I, S, B, U, J };
@@ -33,7 +35,7 @@ enum class insntype { R, I, S, B, U, J };
 class rv32;
 typedef void (*execInsnFunc)(rv32 *, uint32_t);
 
-struct insn
+struct Instruction
 {
 	uint8_t		opcode;
 	insntype	itype;
@@ -41,7 +43,7 @@ struct insn
 	uint8_t		funct3;
 	uint8_t		funct7_flag;
 	uint8_t		funct7;
-	const char	*mneumonic;
+	const char	*mnemonic;
 	execInsnFunc	func;
 };
 
@@ -52,10 +54,10 @@ public:
 	~rv32();
 
 	void reset();
-	void dump();
+	void dump() const;
 
-	int32_t getReg(uint8_t reg);
-	int32_t getPc();
+	int32_t getReg(uint8_t reg) const;
+	int32_t getPc() const { return pc; }
 
 	void setReg(uint8_t reg, int32_t val);
 	void setPc(int32_t val);
@@ -65,20 +67,20 @@ public:
 
 	int getRegNamesABI() const { return regNamesABI; }
 	void setRegNamesABI(int i) { regNamesABI = i?1:0; }
-	const char *getRegName(uint8_t r);
+	const char *getRegName(uint8_t r) const;
 
-	int32_t getInsnImmI(uint32_t insn);
-	int32_t getInsnImmS(uint32_t insn);
-	int32_t getInsnImmB(uint32_t insn);
-	int32_t getInsnImmU(uint32_t insn);
-	int32_t getInsnImmJ(uint32_t insn);
+	static int32_t getInsnImmI(uint32_t insn)  { return ((int32_t)insn)>>20; }
+	static int32_t getInsnImmS(uint32_t insn)  { return (((int32_t)insn>>20) & 0xffffffe0) | ((insn>>7)&0x0000001f); }
+	static int32_t getInsnImmB(uint32_t insn);
+	static int32_t getInsnImmU(uint32_t insn)  { return insn&0xfffff000; }
+	static int32_t getInsnImmJ(uint32_t insn);
 
-	int8_t getInsnRd(uint32_t insn) { return (insn&0x00000f80)>>7; }
-	int8_t getInsnRs1(uint32_t insn) { return (insn&0x000f8000)>>15; }
-	int8_t getInsnRs2(uint32_t insn) { return (insn&0x01f00000)>>20; } 
-	int8_t getInsnOpcode(uint32_t insn) { return insn&0x000007f; }
-	int8_t getInsnFunct3(uint32_t insn) { return (insn&0x0007000)>>12; }
-	int8_t getInsnFunct7(uint32_t insn) { return (insn&0xfe000000)>>25; }
+	static int8_t getInsnRd(uint32_t insn)     { return (insn & 0x00000f80)>>7; }
+	static int8_t getInsnRs1(uint32_t insn)    { return (insn & 0x000f8000)>>15; }
+	static int8_t getInsnRs2(uint32_t insn)    { return (insn & 0x01f00000)>>20; } 
+	static int8_t getInsnOpcode(uint32_t insn) { return  insn & 0x0000007f; }
+	static int8_t getInsnFunct3(uint32_t insn) { return (insn & 0x00007000)>>12; }
+	static int8_t getInsnFunct7(uint32_t insn) { return (insn & 0xfe000000)>>25; }
 
 	static void exec_LUI(rv32 *, uint32_t insn);
 	static void exec_AUIPC(rv32 *, uint32_t insn);
@@ -122,7 +124,7 @@ public:
 
 private:
 	static const char *regNames[2][32];
-	static const insn insns[];
+	static const std::vector<struct Instruction> insns;
 
 
 	//void printInsnArgs(const insn *pi, uint32_t insn);

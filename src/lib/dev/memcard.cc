@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 
-int32_t memcard::get32(uint64_t addr)
+std::optional<uint32_t> memcard::io_get32(uint64_t addr) const
 {
 	if (addr == statusRegAddr)
 		return status;
@@ -62,7 +62,7 @@ void memcard::writeControl(uint32_t val)
 	}
 	else
 	{
-		devices::errorInvalidWrite("32", controlRegAddr, val, "Invalid command value");
+		Devices::errorInvalidWrite("32", controlRegAddr, val, "Invalid command value");
 	}
 }
 

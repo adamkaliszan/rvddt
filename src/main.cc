@@ -26,17 +26,16 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "main.h"
-#include "memory.h"
-#include "rv32.h"
+#include "lib/memory.h"
+#include "lib/rv32.h"
 
-#include "dev/console.h"
-#include "dev/memcard.h"
+#include "lib/dev/console.h"
+#include "lib/dev/memcard.h"
 
 FILE	*ddtout;
 
 rv32	*cpu;
-devices	*dev;
+Devices	*dev;
 
 static void cli();
 
@@ -78,7 +77,7 @@ int main(int argc, char **argv)
 
 	mem = new memory(memstart, memlen);
 	cpu = new rv32();
-	dev = new devices();
+	dev = new Devices();
 
 	dev->addDevice(new console());
 	dev->addDevice(new memcard());

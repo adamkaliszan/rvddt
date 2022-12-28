@@ -21,13 +21,15 @@
 //
 //****************************************************************************
 
+#include <algorithm>
 #include <stdio.h>
 #include <assert.h>
 
 #include "rv32.h"
-#include "main.h"
 
-const insn rv32::insns[] =
+extern FILE *ddtout;
+
+const std::vector<struct Instruction> rv32::insns =
 {
     {0b0110111, insntype::U, 0, 0b000, 0, 0b0000000, "lui", rv32::exec_LUI },
     {0b0010111, insntype::U, 0, 0b000, 0, 0b0000000, "auipc", rv32::exec_AUIPC },
@@ -103,7 +105,7 @@ void rv32::reset()
 	reg[0] = 0;
 }
 
-void rv32::dump()
+void rv32::dump() const
 {
 	if(getRegNamesABI())
 	{
@@ -130,15 +132,10 @@ void rv32::dump()
 
 }
 
-int32_t rv32::getReg(uint8_t r)
+int32_t rv32::getReg(uint8_t r) const
 {
 	assert(r<32 && "invalid register number");
 	return reg[r];
-}
-
-int32_t rv32::getPc()
-{
-	return pc;
 }
 
 void rv32::setReg(uint8_t r, int32_t val)
@@ -188,27 +185,23 @@ int rv32::execInsn(int32_t insn)
 	uint8_t funct3 = getInsnFunct3(insn);
 	uint8_t funct7 = getInsnFunct7(insn);
 
-    uint16_t i;
-    for (i=0; i<sizeof(insns)/sizeof(*insns); ++i)
-    {
-		if (opcode==insns[i].opcode
-			&& (!insns[i].funct3_flag || (insns[i].funct3_flag && funct3==insns[i].funct3))
-			&& (!insns[i].funct7_flag || (insns[i].funct7_flag && funct7==insns[i].funct7)) )
-        {
-			if (trace)
-				fprintf(ddtout, "%8.8x: ", getPc());
-			(*insns[i].func)(this, insn);
-			if (trace)
-				fprintf(ddtout, "\n");
-            break;
-        }
-    }
-
-	if (i==sizeof(insns)/sizeof(*insns))
+	auto matchInstr = std::find_if(std::begin(insns), std::end(insns), [&](const struct Instruction &item)->bool {
+		return (opcode==item.opcode
+			&& (!item.funct3_flag || (item.funct3_flag && funct3==item.funct3))
+			&& (!item.funct7_flag || (item.funct7_flag && funct7==item.funct7))
+		);
+	});
+	if (matchInstr == std::end(insns))
 	{
-       	fprintf(ddtout, "(illegal)\n");
-		return 1;	// tell the CLI that there was a problem
+       	fprintf(ddtout, "(illegal instruction: 0x%08x)\n", insn);
+		return -1;
 	}
+
+	if (trace)
+		fprintf(ddtout, "%8.8x: ", getPc());
+	(*matchInstr->func)(this, insn);
+	if (trace)
+		fprintf(ddtout, "\n");
 
 	return 0;
 }
@@ -221,7 +214,7 @@ int rv32::setTrace(int i)
 }
 
 
-const char *rv32::getRegName(uint8_t r)
+const char *rv32::getRegName(uint8_t r) const
 {
 	assert(r <= 31 && "illegal reg number");
 
@@ -902,24 +895,6 @@ void rv32::exec_AND(rv32 *theCpu, uint32_t insn)
 	theCpu->setPc(theCpu->getPc()+4);
 }
 
-
-
-
-
-
-
-int32_t rv32::getInsnImmI(uint32_t insn)
-{
-	return ((int32_t)insn)>>20;
-}
-
-int32_t rv32::getInsnImmS(uint32_t insn)
-{
-	return ((((int32_t)insn)>>20)&0xffffffe0) 
-		| ((insn>>7)&0x0000001f)
-		;
-}
-
 int32_t rv32::getInsnImmB(uint32_t insn)
 {
 	return ((insn&0x00000f00)>>7) 
@@ -928,11 +903,6 @@ int32_t rv32::getInsnImmB(uint32_t insn)
 		| ((insn&0x80000000)>>19)
 		| ((insn&0x80000000)?0xfffff000:0)
 		;
-}
-
-int32_t rv32::getInsnImmU(uint32_t insn)
-{
-	return insn&0xfffff000;
 }
 
 int32_t rv32::getInsnImmJ(uint32_t insn)
@@ -1017,7 +987,7 @@ void rv32::printInsn(uint32_t insn)
 			&& (!insns[i].funct3_flag || (insns[i].funct3_flag && funct3==insns[i].funct3))
 			&& (!insns[i].funct7_flag || (insns[i].funct7_flag && funct7==insns[i].funct7)) )
 		{
-			fprintf(ddtout, "%-8.8s", insns[i].mneumonic);
+			fprintf(ddtout, "%-8.8s", insns[i].mnemonic);
 			printInsnArgs(&insns[i], insn);
 
 			// XXX dump resolved imm and reg values as comments

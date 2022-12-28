@@ -1,0 +1,1 @@
+add_library(lib_rvddt devices.cc memory.cc rv32.cc saferead.cc dev/memcard.cc)

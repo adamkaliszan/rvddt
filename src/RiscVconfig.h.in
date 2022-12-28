@@ -1,0 +1,2 @@
+#define RiscVddt_VERSION_MAJOR @RiscVddt_VERSION_MAJOR@
+#define RiscVddt_VERSION_MINOR @RiscVddt_VERSION_MINOR@
